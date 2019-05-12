@@ -3,20 +3,18 @@ const sceneService = require('../../services/admin/scene-service')
 
 // 获取场景类表
 const getSceneList = async (ctx) => {
-  ctx.cookies.set('cid', 'hello world')
-  let { page, pageSize } = ctx.request.body
-  let pageInfo = { page: page || 1, pageSize: pageSize || 10 }
-  let sceneList = await sceneService.getSceneList(pageInfo)
+  let { pid, page, pageSize } = ctx.request.body
+  let sceneList = await sceneService.getSceneList({ page: page || 1, pageSize: pageSize || 1, platform_id: pid })
   ctx.body = HttpResult.response(HttpResult.HttpStatus.SUCCESS, { list: sceneList.rows, total: sceneList.total }, 'SUCCESS')
 }
 
 // 增加场景
 const addScene = async (ctx) => {
-  let { note, name } = ctx.request.body
+  let { note, name, pid } = ctx.request.body
   if (!note || !name) {
     return (ctx.body = HttpResult.response(HttpResult.HttpStatus.ERROR_PARAMS, null, '参数缺失'))
   }
-  let scene = await sceneService.addScene({ name: name, note: note })
+  let scene = await sceneService.addScene({ name: name, note: note, platform_id: pid })
   ctx.body = HttpResult.response(HttpResult.HttpStatus.SUCCESS, scene, 'SUCCESS')
 }
 

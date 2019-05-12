@@ -56,7 +56,7 @@ class DBHelper {
   }
 
   static async getSceneList(params) {
-    let [rows] = await DataDb.query('SELECT id, name, note, app_id, app_secret, created_at FROM scene limit ?, ?', [(params.page - 1) * params.pageSize, params.pageSize])
+    let [rows] = await DataDb.query('SELECT id, name, note, app_id, app_secret, created_at FROM scene where platform_id = ? limit ?, ?', [params.platform_id, (params.page - 1) * params.pageSize, params.pageSize])
     let total = await DataDb.query('SELECT count(*) as total FROM scene')
     return { total: total[0][0].total, rows: rows }
   }
@@ -72,13 +72,12 @@ class DBHelper {
     let result
     try {
       await con.beginTransaction()
-      let [rows] = await DataDb.query('INSERT INTO SCENE SET ?', [{ name: params.name, note: params.note }])
+      let [rows] = await DataDb.query('INSERT INTO SCENE SET ?', [{ name: params.name, note: params.note, platform_id: params.platform_id }])
       result = rows
       if (result.insertId) {
-        let salt = ToolUtil.randomString(20)
-        let appId = ToolUtil.cryptoPassFunc((result.insertId + salt))
-        let appScrect = ToolUtil.cryptoPassFunc((result.insertId + result.insertId + salt))
-        let [res] = await DataDb.query('update scene SET ?  WHERE id = ?', [{ salt: salt, app_id: appId, app_secret: appScrect }, result.insertId])
+        let appId = ToolUtil.randomString(20)
+        let appScrect = ToolUtil.cryptoPassFunc((result.insertId + appId))
+        let [res] = await DataDb.query('update scene SET ?  WHERE id = ?', [{ app_id: appId, app_secret: appScrect }, result.insertId])
         if (res.affectedRows) {
           await con.commit()
           await con.release()
@@ -115,7 +114,7 @@ class DBHelper {
   // }
 
   static async getSignonList(params) {
-    let [rows] = await DataDb.query('SELECT a.id as id, a.name as name, cycle_text, extra_text, prizes_text, b.name as checktypename, b.type as checktypetype, rule_desc,  checkintype_id  FROM signon a left join checkin_type b on (a.checkintype_id = b.id) where a.remove = 0 limit ?, ?', [(params.page - 1) * params.pageSize, params.pageSize])
+    let [rows] = await DataDb.query('SELECT a.id as id, a.name as name, cycle_text, extra_text, prizes_text, b.name as checktypename, b.type as checktypetype, rule_desc,  checkintype_id  FROM signon a left join checkin_type b on (a.checkintype_id = b.id) where a.remove = 0 and a.platform_id = ? limit ?, ?', [params.platform_id, (params.page - 1) * params.pageSize, params.pageSize])
     let total = await DataDb.query('SELECT count(1) as total FROM signon where remove = 0')
     return { total: total[0][0].total, rows: rows }
   }
@@ -138,7 +137,7 @@ class DBHelper {
   }
 
   static async addSignon(params) {
-    let [rows] = await DataDb.query('insert into signon SET ?', [{ name: params.name, rule_desc: params.rule_desc, checkintype_id: params.checkintype_id, cycle_text: params.cycle_text, extra_text: params.extra_text }])
+    let [rows] = await DataDb.query('insert into signon SET ?', [{ platform_id: params.platform_id, name: params.name, rule_desc: params.rule_desc, checkintype_id: params.checkintype_id, cycle_text: params.cycle_text, extra_text: params.extra_text }])
     return rows
   }
 
@@ -169,7 +168,7 @@ class DBHelper {
   }
 
   static async getPrizeList(params) {
-    let [rows] = await DataDb.query('SELECT id, name, note, icon from prize  limit ?, ?', [(params.page - 1) * params.pageSize, params.pageSize])
+    let [rows] = await DataDb.query('SELECT id, name, note, icon from prize where platform_id = ? limit ?, ?', [params.platform_id, (params.page - 1) * params.pageSize, params.pageSize])
     let total = await DataDb.query('SELECT count(1) as total FROM prize')
     return { total: total[0][0].total, rows: rows }
   }
@@ -187,7 +186,7 @@ class DBHelper {
   }
 
   static async savePrize(params) {
-    let [rows] = await DataDb.query('insert into prize  SET ?', [{ name: params.name, note: params.note, icon: params.icon }])
+    let [rows] = await DataDb.query('insert into prize  SET ?', [{ platform_id: params.platform_id, name: params.name, note: params.note, icon: params.icon }])
     return rows
   }
 
@@ -298,6 +297,11 @@ class DBHelper {
     let total = await DataDb.query('SELECT count(1)  as total FROM user_award a LEFT JOIN prize b on a.prize_id = b.id WHERE scene_id = ? and uid = ? ', [params.scene_id, params.uid])
     let res = { total: total[0][0].total, rows: rows }
     return res
+  }
+
+  static async getPlatFormList(params) {
+    let [rows] = await DataDb.query('SELECT id, name from platform')
+    return rows
   }
 
   static async consumeUserAward(params) {

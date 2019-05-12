@@ -5,19 +5,24 @@ const prizeService = require('../../services/admin/prize-service')
 
 // 获取奖品类表
 const getPrizeList = async (ctx) => {
-  let { page, pageSize } = ctx.request.body
-  let pageInfo = { page: page || 1, pageSize: pageSize || 10 }
-  let { total, rows } = await prizeService.getPrizeList(pageInfo)
+  let { page, pageSize, pid } = ctx.request.body
+  if (!pid) {
+    return (ctx.body = HttpResult.response(HttpResult.HttpStatus.ERROR_PARAMS, null, '参数缺失'))
+  }
+  let { total, rows } = await prizeService.getPrizeList({ page: page, pageSize: pageSize, platform_id: pid })
   ToolUtil.prefixImgUrl(rows)
   ctx.body = HttpResult.response(HttpResult.HttpStatus.SUCCESS, { list: rows, total: total }, 'SUCCESS')
 }
 
 // 增加奖品
 const addPrize = async (ctx) => {
-  let { note, name } = ctx.request.body
+  let { note, name, pid } = ctx.request.body
+  if (!pid || !note || !name) {
+    return (ctx.body = HttpResult.response(HttpResult.HttpStatus.ERROR_PARAMS, null, '参数缺失'))
+  }
   let files = ctx.request.files
   let iconPath = await FileUtil.moveFileToTarget(files, 'icon', 'prizes')
-  let prize = await prizeService.addPrize({ name: name, note: note, icon: iconPath })
+  let prize = await prizeService.addPrize({ name: name, note: note, icon: iconPath, platform_id: pid })
   ctx.body = HttpResult.response(HttpResult.HttpStatus.SUCCESS, prize, 'SUCCESS')
 }
 

@@ -7,11 +7,11 @@ const prizeService = require('../../services/admin/prize-service')
 
 // 获取签到类型类表
 const getSignonList = async (ctx) => {
-  let data = ctx.cookies.get('cid')
-  console.log('@data: ', data)
-  let { page, pageSize } = ctx.request.body
-  let pageInfo = { page: page || 1, pageSize: pageSize || 10 }
-  let signonList = await signonService.getSignonList(pageInfo)
+  let { page, pageSize, pid } = ctx.request.body
+  if (!pid) {
+    return (ctx.body = HttpResult.response(HttpResult.HttpStatus.ERROR_PARAMS, null, '参数缺失'))
+  }
+  let signonList = await signonService.getSignonList({ page: page || 1, pageSize: pageSize || 10, platform_id: pid })
   ctx.body = HttpResult.response(HttpResult.HttpStatus.SUCCESS, { list: signonList.rows, total: signonList.total }, 'SUCCESS')
 }
 
@@ -27,13 +27,13 @@ const getSignonById = async (ctx) => {
 
 // 增加签到类型
 const addSignon = async (ctx) => {
-  let { name, checkinType, dateType, number, desc, formId, isResign, resignDates, cost } = ctx.request.body
-  if (!name || !checkinType || !dateType || !desc) {
+  let { name, checkinType, dateType, number, desc, formId, isResign, resignDates, cost, pid } = ctx.request.body
+  if (!name || !checkinType || !dateType || !desc || !pid) {
     return (ctx.body = HttpResult.response(HttpResult.HttpStatus.ERROR_PARAMS, null, '参数缺失'))
   }
   let dateTypeObj = await datetypeService.getOneDateTypeByCons({ type: dateType })
   let extraText = (isResign && parseInt(isResign) === 2) ? { resign: { isResign: isResign, formId: formId, cost: cost, resignDates: resignDates || [] } } : {}
-  let signonData = { name: name, checkintype_id: checkinType, rule_desc: desc, cycle_text: JSON.stringify({ type: dateType, name: dateTypeObj[0].name, number: number || 0 }), extra_text: JSON.stringify(extraText) }
+  let signonData = { platform_id: pid, name: name, checkintype_id: checkinType, rule_desc: desc, cycle_text: JSON.stringify({ type: dateType, name: dateTypeObj[0].name, number: number || 0 }), extra_text: JSON.stringify(extraText) }
   let signon = await signonService.addSignon(signonData)
   ctx.body = HttpResult.response(HttpResult.HttpStatus.SUCCESS, signon, 'SUCCESS')
 }

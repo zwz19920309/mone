@@ -2,7 +2,7 @@ const apiRouter = require('koa-router')()
 const sceneCtrl = require('../../controllers/admin/scene-ctrl')
 const authUtil = require('../../common/utils/auth-util')
 // 获取场景列表
-apiRouter.get('/getSceneList', sceneCtrl.getSceneList)
+apiRouter.post('/getSceneList', sceneCtrl.getSceneList)
 // 添加场景
 apiRouter.post('/addScene', sceneCtrl.addScene)
 // 更新场景
